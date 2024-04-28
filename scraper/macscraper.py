@@ -1,8 +1,7 @@
 import socket
 import json
 from datetime import datetime, timedelta
-import requests
-import zlib
+import requests 
 
 class CryptoScraper:
     def __init__(self, api_key):
@@ -62,7 +61,7 @@ def scrape_data():
 
     symbol = 'BTC'  # Example: Bitcoin
     end_date = datetime.utcnow()
-    start_date = end_date - timedelta(days=.02)  
+    start_date = end_date - timedelta(days=.01)  
 
     start_date_str = start_date.strftime('%Y-%m-%dT%H:%M:%SZ')
     end_date_str = end_date.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -83,7 +82,8 @@ def connect_to_server(server_ip, port=65433):
             # Use the test data instead of scraping
             data = scrape_data()
             serialized_data = json.dumps(data).encode('utf-8')
-            send_data_in_chunks(sock, serialized_data)
+            sock.sendall(serialized_data)
+            print(data, "Data sent to server.")
 
             response = sock.recv(1024)
             print("Received response:", response.decode())
@@ -91,21 +91,6 @@ def connect_to_server(server_ip, port=65433):
         print(f"Could not connect to server {server_ip} on port {port}: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
-
-
-def send_data_in_chunks(sock, data, chunk_size=4096):
-    if isinstance(data, str):
-        data = data.encode('utf-8')  # Ensure the data is bytes, encode if it's a string
-    compressed_data = zlib.compress(data)
-    print(f"Compressed data size: {len(compressed_data)} bytes")
-    total_sent = 0
-    while total_sent < len(compressed_data):
-        sent = sock.send(compressed_data[total_sent:total_sent+chunk_size])
-        if sent == 0:
-            raise RuntimeError("Socket connection broken")
-        total_sent += sent
-    print("Data sent to server in chunks.")
-    sock.shutdown(socket.SHUT_WR)
 
 if __name__ == "__main__":
     SERVER_IP = '10.0.0.224' 
