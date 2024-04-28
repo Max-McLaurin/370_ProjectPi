@@ -1,4 +1,3 @@
-import zlib
 import socket
 import csv
 import io
@@ -6,33 +5,26 @@ import io
 def receive_full_data(sock):
     data = b""
     try:
+        sock.settimeout(5.0)
         while True:
             part = sock.recv(4096)
             if not part:
-                break  # This should correctly end the loop when no more data is sent
+                break
             data += part
-    except socket.error as e:
-        print(f"Error receiving data: {e}")
-        return None
-
-    try:
-        decompressed_data = zlib.decompress(data)
-        print("Data fully received and decompressed.")
-        return decompressed_data.decode('utf-8')
-    except zlib.error as e:
-        print(f"Decompression error: {e}")
-        return None
-
-
+            if len(part) < 4096:
+                break
+    except socket.timeout:
+        print("Timeout reached while waiting for data.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    return data
 
 def connect_to_server(server_ip, port=65433):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.connect((server_ip, port))
             print("Connected to server.")
-            print("a")
             data = receive_full_data(sock)
-            print("b")
             if data:
                 # Assume the data is a CSV file content
                 print("Received data:")
